@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ClosetFit — App Prototype</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0F0F1A;
+      --blue:#5B6EF5;
+      --purple:#9B6EF5;
+      --grad:linear-gradient(135deg,#5B6EF5,#9B6EF5);
+      --card:#1E1E35;
+      --card2:#252545;
+      --border:rgba(255,255,255,0.07);
+      --t1:#FFFFFF;
+      --t2:#A0A0C8;
+      --t3:#5A5A7A;
+      --green:#34D399;
+      --yellow:#FBBF24;
+      --pink:#F472B6;
+      --red:#F87171;
+    }
+    body{
+      font-family:'Noto Sans KR',sans-serif;
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;padding:40px 20px;
+      position:relative;
+      overflow-x:hidden;
+    }
+    /* 배경 이미지 레이어 */
+    body::before{
+      content:'';
+      position:fixed;inset:0;z-index:-2;
+      background:
+        url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=85&fit=crop&crop=center') center/cover no-repeat;
+    }
+    /* 브랜드 오버레이: 고급스러운 그라디언트 */
+    body::after{
+      content:'';
+      position:fixed;inset:0;z-index:-1;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(8,8,20,0.82) 0%,
+          rgba(20,15,40,0.75) 40%,
+          rgba(10,10,25,0.88) 100%
+        );
+      backdrop-filter:blur(2px);
+    }
+
+    /* 이미지 공통 */
+    .cloth-img{width:100%;height:100%;object-fit:cover;border-radius:inherit;}
+    .cloth-img-sm{width:44px;height:52px;object-fit:cover;border-radius:10px;}
+    .cloth-img-md{width:64px;height:76px;object-fit:cover;border-radius:14px;}
+
+    /* ── 데스크톱 ── */
+    .desktop{display:flex;align-items:center;gap:52px;max-width:1100px;width:100%;}
+
+    /* 왼쪽 패널 — 글래스모피즘 */
+    .desktop-info{
+      flex:1;color:var(--t1);
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:28px;
+      padding:36px 32px;
+      backdrop-filter:blur(24px);
+      -webkit-backdrop-filter:blur(24px);
+      box-shadow:0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .desktop-info .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(91,110,245,0.2);border:1px solid rgba(91,110,245,0.4);border-radius:20px;padding:5px 14px;font-size:12px;color:#A5B4FC;font-weight:600;margin-bottom:20px;}
+    .dot-pulse{width:6px;height:6px;border-radius:50%;background:#A5B4FC;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .desktop-info h1{font-size:38px;font-weight:900;line-height:1.2;margin-bottom:16px;}
+    .desktop-info h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .desktop-info p{font-size:15px;color:rgba(255,255,255,0.6);line-height:1.75;margin-bottom:28px;}
+
+    /* 브랜드 태그라인 */
+    .brand-tagline{
+      font-size:11px;letter-spacing:3px;text-transform:uppercase;
+      color:rgba(255,255,255,0.35);font-weight:600;margin-bottom:28px;
+    }
+
+    .tab-btns{display:flex;flex-direction:column;gap:8px;}
+    .tab-btn{
+      display:flex;align-items:center;gap:14px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px;padding:13px 16px;cursor:pointer;
+      transition:all .2s;text-align:left;color:var(--t1);
+      backdrop-filter:blur(8px);
+    }
+    .tab-btn:hover{background:rgba(91,110,245,0.12);border-color:rgba(91,110,245,0.3);}
+    .tab-btn.active{background:rgba(91,110,245,0.15);border-color:rgba(91,110,245,0.45);border-left:3px solid var(--blue);}
+    .tab-icon{width:38px;height:38px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 4px 12px rgba(91,110,245,0.35);}
+    .tab-label{font-size:14px;font-weight:700;}
+    .tab-desc{font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;}
+
+    /* ── 폰 프레임 ── */
+    .phone-frame{width:375px;flex-shrink:0;position:relative;}
+    .phone-shell{width:375px;height:780px;border-radius:50px;background:#0A0A15;border:8px solid #1E1E30;box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 40px 100px rgba(0,0,0,.7),inset 0 0 40px rgba(91,110,245,0.05);position:relative;overflow:hidden;}
+    .dynamic-island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:20px;z-index:50;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .di-camera{width:10px;height:10px;border-radius:50%;background:#1A1A1A;border:2px solid #2A2A2A;}
+    .di-sensor{width:8px;height:8px;border-radius:50%;background:#1A1A1A;border:2px solid #333;}
+
+    /* ── 앱 화면 ── */
+    .screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;background:var(--bg);padding-bottom:80px;scrollbar-width:none;}
+    .screen::-webkit-scrollbar{display:none;}
+    .screen.active{display:flex;}
+    .status-bar{display:flex;align-items:center;justify-content:space-between;padding:52px 24px 8px;font-size:12px;font-weight:700;color:var(--t1);flex-shrink:0;}
+    .status-icons{display:flex;align-items:center;gap:5px;font-size:11px;}
+    .app-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 16px;flex-shrink:0;}
+    .app-header-title{font-size:22px;font-weight:900;color:var(--t1);}
+    .header-icon-btn{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;}
+    .bottom-tab{position:absolute;bottom:0;left:0;right:0;height:80px;background:rgba(15,15,26,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 8px 16px;z-index:40;}
+    .btab{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 16px;border-radius:12px;transition:all .2s;flex:1;background:none;border:none;}
+    .btab-icon{font-size:22px;}
+    .btab-label{font-size:10px;font-weight:600;color:var(--t3);}
+    .btab.active .btab-label{color:var(--blue);}
+    .btab.active .btab-icon{filter:drop-shadow(0 0 6px rgba(91,110,245,0.8));}
+    .section-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;}
+    .section-title{font-size:16px;font-weight:800;color:var(--t1);}
+    .section-more{font-size:12px;color:var(--blue);font-weight:600;}
+
+    /* ── SCREEN 0: 홈 ── */
+    .home-greeting{padding:0 20px 4px;}
+    .home-greeting .sub{font-size:13px;color:var(--t3);margin-bottom:4px;}
+    .home-greeting .name{font-size:24px;font-weight:900;color:var(--t1);}
+    .home-greeting .name span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .weather-card{margin:14px 20px;background:var(--grad);border-radius:20px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
+    .weather-card::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.1);}
+    .weather-left .wday{font-size:12px;color:rgba(255,255,255,.75);font-weight:600;}
+    .weather-left .wtemp{font-size:32px;font-weight:900;color:#fff;margin:2px 0;}
+    .weather-left .wdesc{font-size:13px;color:rgba(255,255,255,.8);}
+    .weather-right{font-size:52px;}
+    .weather-suggestion{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 12px;margin-top:12px;font-size:12px;color:#fff;font-weight:500;}
+
+    /* 오늘의 코디 카드 */
+    .outfit-scroll{display:flex;gap:12px;padding:0 20px 4px;overflow-x:auto;scrollbar-width:none;}
+    .outfit-scroll::-webkit-scrollbar{display:none;}
+    .outfit-card{flex-shrink:0;width:160px;background:var(--card);border-radius:18px;border:1px solid var(--border);overflow:hidden;transition:transform .2s;cursor:pointer;}
+    .outfit-card:hover{transform:scale(1.02);}
+    .outfit-thumb{height:120px;display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;overflow:hidden;}
+    .outfit-thumb-img{width:40px;height:58px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+    .outfit-info{padding:10px 12px 12px;}
+    .outfit-mood{font-size:10px;color:var(--blue);font-weight:700;margin-bottom:3px;}
+    .outfit-name{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:5px;line-height:1.4;}
+    .outfit-match{display:inline-block;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);color:var(--green);font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;}
+
+    /* 빠른 시작 */
+    .quick-start{margin:4px 20px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;}
+    .qs-title{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:14px;}
+    .qs-items{display:flex;gap:10px;}
+    .qs-item{flex:1;background:var(--card2);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;border:1px solid var(--border);transition:all .2s;overflow:hidden;}
+    .qs-item:hover{border-color:rgba(91,110,245,.4);}
+    .qs-img{width:48px;height:56px;object-fit:cover;border-radius:8px;margin:0 auto 6px;display:block;}
+    .qs-item-label{font-size:10px;color:var(--t2);font-weight:600;}
+
+    /* ── SCREEN 1: 내 옷장 ── */
+    .closet-stats{display:flex;gap:10px;padding:0 20px 16px;}
+    .cs-card{flex:1;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border);text-align:center;}
+    .cs-num{font-size:22px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .cs-label{font-size:11px;color:var(--t3);margin-top:3px;}
+    .category-tabs{display:flex;gap:8px;padding:4px 20px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+    .category-tabs::-webkit-scrollbar{display:none;}
+    .closet-scroll{overflow-y:auto;flex:1;padding-bottom:80px;scrollbar-width:none;}
+    .closet-scroll::-webkit-scrollbar{display:none;}
+    .cat-tab{flex-shrink:0;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);color:var(--t3);background:var(--card);transition:all .2s;}
+    .cat-tab.active{background:var(--grad);color:#fff;border-color:transparent;}
+    .closet-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px;}
+    .item-card{background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:all .2s;}
+    .item-card:hover{border-color:rgba(91,110,245,.4);}
+    .item-thumb{height:110px;overflow:hidden;position:relative;}
+    .item-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+    .item-card:hover .item-thumb img{transform:scale(1.05);}
+    .item-info{padding:10px 12px;}
+    .item-name{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+    .item-tags{display:flex;gap:4px;flex-wrap:wrap;}
+    .item-tag{font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(91,110,245,.15);color:#7C8FF7;font-weight:600;}
+    .item-add{height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed rgba(91,110,245,.3);background:rgba(91,110,245,.05);cursor:pointer;border-radius:16px;}
+    .item-add-icon{font-size:28px;color:rgba(91,110,245,.6);}
+    .item-add-label{font-size:12px;color:var(--t3);font-weight:600;}
+
+    /* ── SCREEN 2: 컬러 매칭 ── */
+    .match-selected{margin:0 20px 16px;background:var(--grad);border-radius:20px;padding:18px;display:flex;align-items:center;gap:16px;}
+    .match-sel-thumb{width:64px;height:76px;border-radius:14px;overflow:hidden;flex-shrink:0;}
+    .match-sel-thumb img{width:100%;height:100%;object-fit:cover;}
+    .match-sel-name{font-size:16px;font-weight:900;color:#fff;}
+    .match-sel-color{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.8);margin-top:4px;}
+    .color-dot{width:12px;height:12px;border-radius:50%;}
+    .match-sel-tag{display:inline-block;margin-top:8px;background:rgba(255,255,255,.2);border-radius:8px;padding:3px 10px;font-size:11px;color:#fff;font-weight:600;}
+    .palette-section{margin:0 20px 16px;}
+    .palette-label{font-size:12px;font-weight:700;color:var(--t2);margin-bottom:10px;}
+    .palette-chips{display:flex;gap:8px;}
+    .p-chip{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+    .p-color{width:46px;height:46px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:transform .2s;}
+    .p-chip:hover .p-color{transform:scale(1.1);}
+    .p-chip.star .p-color{outline:2px solid #7C8FF7;outline-offset:2px;}
+    .p-name{font-size:9px;color:var(--t3);font-weight:600;text-align:center;}
+    .match-results{padding:0 20px;display:flex;flex-direction:column;gap:10px;}
+    .match-card{background:var(--card);border-radius:16px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+    .match-card:hover{border-color:rgba(91,110,245,.4);}
+    .match-card.best{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.05);}
+    .match-icons{display:flex;gap:5px;}
+    .match-icon{width:44px;height:52px;border-radius:10px;overflow:hidden;}
+    .match-icon img{width:100%;height:100%;object-fit:cover;}
+    .match-mood{font-size:10px;color:var(--t3);margin-bottom:3px;}
+    .match-name{font-size:12px;font-weight:700;color:var(--t1);line-height:1.4;}
+    .match-pct{margin-left:auto;text-align:center;font-size:16px;font-weight:900;}
+    .match-pct.best{color:var(--yellow);}
+    .match-pct.good{color:var(--blue);}
+    .match-pct-label{font-size:9px;color:var(--t3);font-weight:600;margin-top:1px;}
+
+    /* ── SCREEN 3: 리포트 ── */
+    .report-summary{margin:0 20px 16px;background:var(--grad);border-radius:20px;padding:20px;}
+    .rs-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .rs-title{font-size:14px;font-weight:700;color:rgba(255,255,255,.8);}
+    .rs-badge{background:rgba(255,255,255,.2);border-radius:8px;padding:4px 10px;font-size:11px;color:#fff;font-weight:700;}
+    .rs-stats{display:flex;gap:0;}
+    .rs-stat{flex:1;text-align:center;border-right:1px solid rgba(255,255,255,.2);}
+    .rs-stat:last-child{border-right:none;}
+    .rs-num{font-size:24px;font-weight:900;color:#fff;}
+    .rs-label{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;}
+    .color-dist{padding:0 20px 16px;}
+    .cd-title{font-size:14px;font-weight:800;color:var(--t1);margin-bottom:12px;}
+    .cd-bars{display:flex;flex-direction:column;gap:10px;}
+    .cd-bar-row{display:flex;align-items:center;gap:10px;}
+    .cd-bar-label{font-size:12px;color:var(--t2);width:50px;flex-shrink:0;}
+    .cd-bar-track{flex:1;height:8px;background:var(--card2);border-radius:4px;overflow:hidden;}
+    .cd-bar-fill{height:100%;border-radius:4px;}
+    .cd-bar-pct{font-size:11px;color:var(--t3);font-weight:700;width:30px;text-align:right;}
+    .unused-section{padding:0 20px;}
+    .unused-title{font-size:14px;font-weight:800;color:var(--t1);margin-bottom:12px;}
+    .unused-items{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+    .unused-items::-webkit-scrollbar{display:none;}
+    .unused-item{flex-shrink:0;width:90px;background:var(--card);border-radius:14px;border:1px solid rgba(248,113,113,.3);overflow:hidden;text-align:center;padding-bottom:10px;}
+    .unused-img{width:90px;height:90px;object-fit:cover;}
+    .unused-name{font-size:10px;color:var(--t2);font-weight:600;margin:6px 6px 3px;display:block;}
+    .unused-days{font-size:10px;color:var(--red);font-weight:700;}
+    .personal-color{margin:16px 20px 0;background:var(--card);border-radius:20px;border:1px solid var(--border);padding:18px;}
+    .pc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .pc-title{font-size:14px;font-weight:800;color:var(--t1);}
+    .pc-type{background:linear-gradient(135deg,#FDE68A,#F59E0B);color:#000;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;}
+    .pc-colors{display:flex;gap:8px;margin-bottom:12px;}
+    .pc-chip{flex:1;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(0,0,0,.6);}
+    .pc-desc{font-size:12px;color:var(--t2);line-height:1.6;}
+  </style>
+</head>
+<body>
+<div class="desktop">
+
+  <!-- 왼쪽 설명 패널 -->
+  <div class="desktop-info">
+    <div class="badge"><span class="dot-pulse"></span> App Prototype v0.1</div>
+    <h1>옷장에 있는 옷으로,<br/><em>더 잘 입는다</em></h1>
+    <p>AI가 내 옷장 속 옷의 컬러를 분석해<br/>오늘의 코디를 추천해드립니다.</p>
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="switchTab(this,0)">
+        <div class="tab-icon">🏠</div>
+        <div><div class="tab-label">홈</div><div class="tab-desc">오늘의 날씨 기반 코디 추천</div></div>
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,1)">
+        <div class="tab-icon">👗</div>
+        <div><div class="tab-label">내 옷장</div><div class="tab-desc">등록된 아이템 관리</div></div>
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,2)">
+        <div class="tab-icon">🎨</div>
+        <div><div class="tab-label">컬러 매칭</div><div class="tab-desc">AI 컬러 팔레트 & 코디 추천</div></div>
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,3)">
+        <div class="tab-icon">📊</div>
+        <div><div class="tab-label">스타일 리포트</div><div class="tab-desc">옷장 활용 분석 & 퍼스널 컬러</div></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 폰 프레임 -->
+  <div class="phone-frame">
+    <div class="phone-shell">
+      <div class="dynamic-island"><div class="di-camera"></div><div class="di-sensor"></div></div>
+
+      <!-- ═══ SCREEN 0: 홈 ═══ -->
+      <div class="screen active" id="screen-0">
+        <div class="status-bar"><span>9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+        <div class="app-header">
+          <div class="app-header-title">안녕하세요 👋</div>
+          <div class="header-icon-btn">🔔</div>
+        </div>
+        <div class="home-greeting">
+          <div class="sub">오늘도 멋진 하루 되세요</div>
+          <div class="name">이현우 <span>님의 코디</span></div>
+        </div>
+        <div class="weather-card">
+          <div class="weather-left">
+            <div class="wday">오늘 · 서울</div>
+            <div class="wtemp">18°C</div>
+            <div class="wdesc">맑음 · 약간 선선해요</div>
+            <div class="weather-suggestion">🧥 가디건이나 얇은 자켓을 추천해요</div>
+          </div>
+          <div class="weather-right">☀️</div>
+        </div>
+        <div class="section-header">
+          <div class="section-title">오늘의 추천 코디</div>
+          <div class="section-more">더보기</div>
+        </div>
+        <div class="outfit-scroll">
+          <!-- 캐주얼 -->
+          <div class="outfit-card">
+            <div class="outfit-thumb" style="background:#1a1a2e;">
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=80&h=100&fit=crop&q=80" alt="카멜 티셔츠"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=80&h=100&fit=crop&q=80" alt="네이비 슬랙스"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=80&h=100&fit=crop&q=80" alt="스니커즈"/>
+            </div>
+            <div class="outfit-info">
+              <div class="outfit-mood">캐주얼</div>
+              <div class="outfit-name">카멜 티 + 네이비 슬랙스</div>
+              <span class="outfit-match">98% 매칭</span>
+            </div>
+          </div>
+          <!-- 오피스 -->
+          <div class="outfit-card">
+            <div class="outfit-thumb" style="background:#1a1a2e;">
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1603252109303-2751441dd157?w=80&h=100&fit=crop&q=80" alt="화이트 셔츠"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=80&h=100&fit=crop&q=80" alt="슬랙스"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1533681904393-9ab6eee7e408?w=80&h=100&fit=crop&q=80" alt="옥스포드"/>
+            </div>
+            <div class="outfit-info">
+              <div class="outfit-mood">오피스</div>
+              <div class="outfit-name">화이트 셔츠 + 차콜 팬츠</div>
+              <span class="outfit-match">94% 매칭</span>
+            </div>
+          </div>
+          <!-- 스트릿 -->
+          <div class="outfit-card">
+            <div class="outfit-thumb" style="background:#1a1a2e;">
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=80&h=100&fit=crop&q=80" alt="후디"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1542272604-787c3835535d?w=80&h=100&fit=crop&q=80" alt="조거팬츠"/>
+              <img class="outfit-thumb-img" src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=80&h=100&fit=crop&q=80" alt="스니커즈"/>
+            </div>
+            <div class="outfit-info">
+              <div class="outfit-mood">스트릿</div>
+              <div class="outfit-name">그레이 후디 + 블랙 조거</div>
+              <span class="outfit-match">89% 매칭</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 빠른 시작 -->
+        <div class="section-header" style="padding-top:16px"><div class="section-title">빠른 코디 시작</div></div>
+        <div class="quick-start">
+          <div class="qs-items">
+            <div class="qs-item" onclick="switchScreen(1)">
+              <img class="qs-img" src="https://images.unsplash.com/photo-1603252109303-2751441dd157?w=96&h=112&fit=crop&q=80" alt="상의"/>
+              <div class="qs-item-label">상의 선택</div>
+            </div>
+            <div class="qs-item" onclick="switchScreen(1)">
+              <img class="qs-img" src="https://images.unsplash.com/photo-1551028719-00167b16eac5?w=96&h=112&fit=crop&q=80" alt="하의"/>
+              <div class="qs-item-label">하의 선택</div>
+            </div>
+            <div class="qs-item" onclick="switchScreen(2)">
+              <img class="qs-img" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=96&h=112&fit=crop&q=80" alt="신발"/>
+              <div class="qs-item-label">컬러 매칭</div>
+            </div>
+            <div class="qs-item" onclick="switchScreen(3)">
+              <img class="qs-img" src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=96&h=112&fit=crop&q=80" alt="리포트"/>
+              <div class="qs-item-label">리포트</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN 1: 내 옷장 ═══ -->
+      <div class="screen" id="screen-1" style="overflow:hidden;">
+        <!-- 고정 헤더 (스크롤 없음) -->
+        <div style="flex-shrink:0;">
+          <div class="status-bar"><span>9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+          <div class="app-header">
+            <div class="app-header-title">내 옷장</div>
+            <div class="header-icon-btn">➕</div>
+          </div>
+          <div class="closet-stats">
+            <div class="cs-card"><div class="cs-num">25</div><div class="cs-label">전체</div></div>
+            <div class="cs-card"><div class="cs-num">8</div><div class="cs-label">상의</div></div>
+            <div class="cs-card"><div class="cs-num">7</div><div class="cs-label">하의</div></div>
+            <div class="cs-card"><div class="cs-num">4</div><div class="cs-label">아우터</div></div>
+          </div>
+          <div class="category-tabs">
+            <div class="cat-tab active">전체</div>
+            <div class="cat-tab">상의</div>
+            <div class="cat-tab">하의</div>
+            <div class="cat-tab">아우터</div>
+            <div class="cat-tab">신발</div>
+            <div class="cat-tab">액세서리</div>
+          </div>
+        </div>
+        <!-- 스크롤 영역 (그리드만) -->
+        <div class="closet-scroll">
+        <div class="closet-grid">
+          <div class="item-card">
+            <div class="item-thumb">
+              <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&h=140&fit=crop&q=80" alt="카멜 티셔츠"/>
+            </div>
+            <div class="item-info">
+              <div class="item-name">카멜 라운드넥 티셔츠</div>
+              <div class="item-tags"><span class="item-tag">캐주얼</span><span class="item-tag">베이지</span></div>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-thumb">
+              <img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=200&h=140&fit=crop&q=80" alt="네이비 슬랙스"/>
+            </div>
+            <div class="item-info">
+              <div class="item-name">네이비 슬림 슬랙스</div>
+              <div class="item-tags"><span class="item-tag">오피스</span><span class="item-tag">네이비</span></div>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-thumb">
+              <img src="https://images.unsplash.com/photo-1603252109303-2751441dd157?w=200&h=140&fit=crop&q=80" alt="화이트 셔츠"/>
+            </div>
+            <div class="item-info">
+              <div class="item-name">화이트 옥스포드 셔츠</div>
+              <div class="item-tags"><span class="item-tag">오피스</span><span class="item-tag">화이트</span></div>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-thumb">
+              <img src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=200&h=140&fit=crop&q=80" alt="그레이 후드"/>
+            </div>
+            <div class="item-info">
+              <div class="item-name">그레이 후드 집업</div>
+              <div class="item-tags"><span class="item-tag">스트릿</span><span class="item-tag">그레이</span></div>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-thumb">
+              <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&h=140&fit=crop&q=80" alt="스니커즈"/>
+            </div>
+            <div class="item-info">
+              <div class="item-name">베이지 캔버스 스니커즈</div>
+              <div class="item-tags"><span class="item-tag">캐주얼</span><span class="item-tag">베이지</span></div>
+            </div>
+          </div>
+          <div class="item-card" style="border-color:rgba(91,110,245,0.5);box-shadow:0 0 0 2px rgba(91,110,245,0.2);">
+            <div class="item-thumb" style="position:relative;">
+              <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?w=200&h=140&fit=crop&q=80" alt="베이지 치노 팬츠"/>
+              <div style="position:absolute;top:6px;right:6px;background:var(--blue);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;">NEW</div>
+            </div>
+            <div class="item-info">
+              <div class="item-name">베이지 치노 팬츠</div>
+              <div class="item-tags"><span class="item-tag">캐주얼</span><span class="item-tag">베이지</span><span class="item-tag">슬림핏</span></div>
+            </div>
+          </div>
+          <div class="item-add">
+            <div class="item-add-icon">＋</div>
+            <div class="item-add-label">아이템 추가</div>
+          </div>
+        </div><!-- /closet-grid -->
+        </div><!-- /closet-scroll -->
+        <div class="bottom-tab">
+          <button class="btab" onclick="switchScreen(0)"><div class="btab-icon">🏠</div><div class="btab-label">홈</div></button>
+          <button class="btab active" onclick="switchScreen(1)"><div class="btab-icon">👗</div><div class="btab-label">옷장</div></button>
+          <button class="btab" onclick="switchScreen(2)"><div class="btab-icon">🎨</div><div class="btab-label">매칭</div></button>
+          <button class="btab" onclick="switchScreen(3)"><div class="btab-icon">📊</div><div class="btab-label">리포트</div></button>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN 2: 컬러 매칭 ═══ -->
+      <div class="screen" id="screen-2">
+        <div class="status-bar"><span>9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+        <div class="app-header">
+          <div class="app-header-title">컬러 매칭</div>
+          <div class="header-icon-btn">🔄</div>
+        </div>
+        <div class="match-selected">
+          <div class="match-sel-thumb">
+            <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?w=128&h=152&fit=crop&q=80" alt="베이지 치노 팬츠"/>
+          </div>
+          <div>
+            <div class="match-sel-name">베이지 치노 팬츠</div>
+            <div class="match-sel-color"><div class="color-dot" style="background:#C8B89A"></div>Beige Khaki #C8B89A</div>
+            <span class="match-sel-tag">하의 · 슬림핏</span>
+          </div>
+        </div>
+        <div class="palette-section">
+          <div class="palette-label">🎨 추천 컬러 팔레트</div>
+          <div class="palette-chips">
+            <div class="p-chip star"><div class="p-color" style="background:#FFFFFF;border:1px solid rgba(255,255,255,.2)"></div><div class="p-name">화이트⭐</div></div>
+            <div class="p-chip"><div class="p-color" style="background:#1E3A5F"></div><div class="p-name">네이비</div></div>
+            <div class="p-chip"><div class="p-color" style="background:#4B5563"></div><div class="p-name">차콜</div></div>
+            <div class="p-chip"><div class="p-color" style="background:#7C6349"></div><div class="p-name">브라운</div></div>
+            <div class="p-chip"><div class="p-color" style="background:#9CA3AF"></div><div class="p-name">그레이</div></div>
+          </div>
+        </div>
+        <div class="section-header" style="padding-top:4px"><div class="section-title">✨ 추천 코디</div></div>
+        <div class="match-results">
+          <div class="match-card best">
+            <div class="match-icons">
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=88&h=104&fit=crop&q=80" alt="티셔츠"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=88&h=104&fit=crop&q=80" alt="슬랙스"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=88&h=104&fit=crop&q=80" alt="스니커즈"/></div>
+            </div>
+            <div>
+              <div class="match-mood">캐주얼 룩</div>
+              <div class="match-name">카멜 티 + 네이비 슬랙스<br/>+ 베이지 스니커즈</div>
+            </div>
+            <div class="match-pct best">98%<div class="match-pct-label">매칭</div></div>
+          </div>
+          <div class="match-card">
+            <div class="match-icons">
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1603252109303-2751441dd157?w=88&h=104&fit=crop&q=80" alt="셔츠"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=88&h=104&fit=crop&q=80" alt="슬랙스"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1533681904393-9ab6eee7e408?w=88&h=104&fit=crop&q=80" alt="구두"/></div>
+            </div>
+            <div>
+              <div class="match-mood">오피스 룩</div>
+              <div class="match-name">화이트 셔츠 + 네이비 슬랙스<br/>+ 다크 옥스포드</div>
+            </div>
+            <div class="match-pct good">94%<div class="match-pct-label">매칭</div></div>
+          </div>
+          <div class="match-card">
+            <div class="match-icons">
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=88&h=104&fit=crop&q=80" alt="후디"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=88&h=104&fit=crop&q=80" alt="슬랙스"/></div>
+              <div class="match-icon"><img src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=88&h=104&fit=crop&q=80" alt="스니커즈"/></div>
+            </div>
+            <div>
+              <div class="match-mood">스트릿 룩</div>
+              <div class="match-name">그레이 후디 + 네이비 슬랙스<br/>+ 차콜 스니커즈</div>
+            </div>
+            <div class="match-pct good">89%<div class="match-pct-label">매칭</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN 3: 리포트 ═══ -->
+      <div class="screen" id="screen-3">
+        <div class="status-bar"><span>9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+        <div class="app-header">
+          <div class="app-header-title">스타일 리포트</div>
+          <div class="header-icon-btn">📅</div>
+        </div>
+        <div class="report-summary">
+          <div class="rs-top"><div class="rs-title">이번 달 스타일 점수</div><div class="rs-badge">5월 리포트</div></div>
+          <div class="rs-stats">
+            <div class="rs-stat"><div class="rs-num">24</div><div class="rs-label">등록 아이템</div></div>
+            <div class="rs-stat"><div class="rs-num">68%</div><div class="rs-label">활용률</div></div>
+            <div class="rs-stat"><div class="rs-num">+32%</div><div class="rs-label">지난달 대비</div></div>
+          </div>
+        </div>
+        <div class="color-dist">
+          <div class="cd-title">🎨 내 옷장 컬러 분포</div>
+          <div class="cd-bars">
+            <div class="cd-bar-row"><div class="cd-bar-label">네이비</div><div class="cd-bar-track"><div class="cd-bar-fill" style="width:72%;background:linear-gradient(90deg,#1E3A5F,#2E5F9B)"></div></div><div class="cd-bar-pct">72%</div></div>
+            <div class="cd-bar-row"><div class="cd-bar-label">베이지</div><div class="cd-bar-track"><div class="cd-bar-fill" style="width:55%;background:linear-gradient(90deg,#D2B48C,#F4A460)"></div></div><div class="cd-bar-pct">55%</div></div>
+            <div class="cd-bar-row"><div class="cd-bar-label">그레이</div><div class="cd-bar-track"><div class="cd-bar-fill" style="width:40%;background:linear-gradient(90deg,#4B5563,#9CA3AF)"></div></div><div class="cd-bar-pct">40%</div></div>
+            <div class="cd-bar-row"><div class="cd-bar-label">화이트</div><div class="cd-bar-track"><div class="cd-bar-fill" style="width:28%;background:linear-gradient(90deg,#D1D5DB,#F9FAFB)"></div></div><div class="cd-bar-pct">28%</div></div>
+            <div class="cd-bar-row"><div class="cd-bar-label">블랙</div><div class="cd-bar-track"><div class="cd-bar-fill" style="width:20%;background:linear-gradient(90deg,#111827,#374151)"></div></div><div class="cd-bar-pct">20%</div></div>
+          </div>
+        </div>
+        <div class="unused-section">
+          <div class="unused-title">🚨 오래 안 입은 옷</div>
+          <div class="unused-items">
+            <div class="unused-item">
+              <img class="unused-img" src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=180&h=180&fit=crop&q=80" alt="트렌치코트"/>
+              <span class="unused-name">베이지 트렌치코트</span>
+              <div class="unused-days">47일째</div>
+            </div>
+            <div class="unused-item">
+              <img class="unused-img" src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=180&h=180&fit=crop&q=80" alt="체크셔츠"/>
+              <span class="unused-name">체크 패턴 셔츠</span>
+              <div class="unused-days">38일째</div>
+            </div>
+            <div class="unused-item">
+              <img class="unused-img" src="https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?w=180&h=180&fit=crop&q=80" alt="로퍼"/>
+              <span class="unused-name">브라운 로퍼</span>
+              <div class="unused-days">29일째</div>
+            </div>
+          </div>
+        </div>
+        <div class="personal-color">
+          <div class="pc-header"><div class="pc-title">퍼스널 컬러 진단</div><div class="pc-type">가을 웜톤</div></div>
+          <div class="pc-colors">
+            <div class="pc-chip" style="background:#D2691E;">테라코타</div>
+            <div class="pc-chip" style="background:#C8A882;">카멜</div>
+            <div class="pc-chip" style="background:#8B6914;color:rgba(255,255,255,.8)">머스타드</div>
+            <div class="pc-chip" style="background:#556B2F;color:rgba(255,255,255,.8)">올리브</div>
+          </div>
+          <div class="pc-desc">따뜻하고 깊이 있는 컬러가 잘 어울려요. 테라코타, 카멜, 머스타드 계열을 포인트로 활용해보세요.</div>
+        </div>
+      </div>
+
+      <!-- 하단 탭바 -->
+      <div class="bottom-tab">
+        <button class="btab active" onclick="switchScreen(0)"><div class="btab-icon">🏠</div><div class="btab-label">홈</div></button>
+        <button class="btab" onclick="switchScreen(1)"><div class="btab-icon">👗</div><div class="btab-label">옷장</div></button>
+        <button class="btab" onclick="switchScreen(2)"><div class="btab-icon">🎨</div><div class="btab-label">매칭</div></button>
+        <button class="btab" onclick="switchScreen(3)"><div class="btab-icon">📊</div><div class="btab-label">리포트</div></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchScreen(idx){
+    document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===idx));
+    document.querySelectorAll('.btab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  }
+  function switchTab(btn,idx){switchScreen(idx);}
+  document.querySelectorAll('.cat-tab').forEach(tab=>{
+    tab.addEventListener('click',function(){
+      document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
