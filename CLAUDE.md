@@ -2,11 +2,25 @@
 
 ## 서비스 개요
 
-**클로젯핏(ClosetFit)**은 집에 있는 옷(상의·하의)을 선택하면 AI가 컬러를 분석해 매칭 룩을 추천해주는 모바일 앱 서비스입니다.
+**클로젯핏(ClosetFit)**은 집에 있는 옷을 등록하면 AI가 색상을 분석해 어울리는 코디를 추천해주는 모바일 앱 서비스입니다.
 
+- **슬로건**: "이미 가진 옷으로, 더 잘 입는다"
 - **타겟층**: 20~40대
-- **핵심 가치**: "옷장에 있는 옷으로, 더 잘 입는다"
 - **GitHub**: https://github.com/davegpt25/business.git (branch: master)
+
+---
+
+## 아키텍처
+
+```
+모바일 앱 (React Native / Expo)  ← http://localhost:8081
+        ↕
+백엔드 API (Node.js / Express)   ← http://localhost:3000
+        ↕
+PostgreSQL DB (closetfit_dev)    ← localhost:5432
+        ↕
+AI 서비스 (FastAPI / Python)     ← http://localhost:8001
+```
 
 ---
 
@@ -14,119 +28,221 @@
 
 ```
 기획서/
-├── CLAUDE.md                        ← 이 파일
-├── 클로젯핏_서비스기획서.md          ← 서비스 기획서 (Markdown 원본)
-├── 클로젯핏_서비스기획서.docx        ← 기획서 Word 변환본
-├── convert_to_docx.py               ← .md → .docx 변환 스크립트
-├── mock/
-│   ├── index.html                   ← 모바일 앱 UI 목업 (메인 파일)
-│   └── serve.py                     ← 로컬 개발 서버 (Python HTTP)
-└── .claude/
-    └── launch.json                  ← Claude Preview 서버 설정
+├── CLAUDE.md
+├── README.md
+├── .gitignore
+├── backend/                     ← Node.js API 서버
+│   ├── .env                     ← 환경변수 (gitignore됨)
+│   ├── .env.example
+│   ├── migrations/
+│   │   └── 001_initial_schema.sql
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── server.js
+│   │   ├── config/db.js
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── closetController.js
+│   │   │   ├── outfitController.js
+│   │   │   └── uploadController.js
+│   │   ├── middleware/
+│   │   │   ├── auth.js
+│   │   │   └── errorHandler.js
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   ├── closet.js
+│   │   │   ├── outfit.js
+│   │   │   └── upload.js
+│   │   └── services/aiServiceClient.js
+│   ├── tests/
+│   │   ├── auth.test.js         ← 7개 테스트
+│   │   ├── closet.test.js       ← 9개 테스트
+│   │   └── outfit.test.js       ← 5개 테스트
+│   └── uploads/                 ← 업로드된 이미지 저장 (gitignore됨)
+├── ai-service/                  ← FastAPI AI 서비스
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── models/schemas.py
+│   ├── routers/
+│   │   ├── color.py             ← POST /color/extract
+│   │   └── item.py              ← POST /item/analyze-item
+│   ├── services/color_extractor.py  ← K-means 색상 추출
+│   └── tests/test_color_extractor.py ← 4개 테스트
+└── mobile/                      ← React Native / Expo 앱
+    ├── .env                     ← EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (gitignore됨)
+    ├── App.js
+    ├── src/
+    │   ├── api/client.js        ← axios 클라이언트 + authAPI, closetAPI, uploadAPI
+    │   ├── navigation/AppNavigator.js
+    │   ├── store/
+    │   │   ├── useAuthStore.js  ← Zustand 인증 상태
+    │   │   └── useClosetStore.js ← Zustand 옷장 상태
+    │   └── screens/
+    │       ├── OnboardingScreen.js  ← Google OAuth 로그인
+    │       ├── HomeScreen.js
+    │       ├── ClosetScreen.js
+    │       ├── AddItemScreen.js    ← 사진 업로드
+    │       ├── ColorMatchScreen.js
+    │       └── OutfitResultScreen.js
+    └── package.json
 ```
 
 ---
 
-## 개발 서버 실행
+## 로컬 실행 방법
 
-### 방법 1: Claude Preview (권장)
-`.claude/launch.json`에 설정 완료. Claude Code에서 자동으로 실행 가능.
+### 1. PostgreSQL DB 설정 (최초 1회)
 
-### 방법 2: 직접 실행
-```bash
-cd mock
-python serve.py
-# → http://localhost:3001 에서 확인
+```powershell
+$env:PGPASSWORD = "postgres"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE closetfit_dev;"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d closetfit_dev -f backend/migrations/001_initial_schema.sql
 ```
 
-**중요 사항:**
-- `serve.py`는 `PORT` 환경변수를 읽음 (기본값: 3001)
-- Python 절대 경로: `C:\Users\hwlll\AppData\Local\Programs\Python\Python312\python.exe`
-- Windows에서 `ConnectionAbortedError` 방지를 위해 `ThreadingMixIn + TCPServer` 구조 사용
+### 2. 백엔드 서버 실행
 
----
-
-## 목업 (mock/index.html)
-
-### 구조
-- **폰 프레임**: 375×780px, border-radius: 50px, Dynamic Island 포함
-- **화면 4개** (JS `switchScreen()`으로 전환):
-  - `screen-0`: 홈 (오늘의 추천 코디)
-  - `screen-1`: 내 옷장 (업로드한 옷 목록)
-  - `screen-2`: 컬러 매칭 (색상 분석 결과)
-  - `screen-3`: 스타일 리포트 (월간 통계)
-- **하단 탭바**: 홈 / 옷장 / 매칭 / 리포트
-
-### 디자인 시스템
-| 항목 | 값 |
-|------|-----|
-| 배경 | Unsplash 패션 에디토리얼 사진 (`photo-1558618666-fcd25c85cd64`) + 다크 그라데이션 오버레이 |
-| 좌측 패널 | 글라스모피즘 (`backdrop-filter: blur(24px)`, `rgba(255,255,255,0.04)`) |
-| 폰 배경 | `#0F0F1A` (딥 네이비) |
-| 강조색 | `#7C6FF7` (퍼플), `#4ECDC4` (틸) |
-| 폰트 | Noto Sans KR |
-| 의류 이미지 | Unsplash CDN (`images.unsplash.com/photo-{id}?w=&h=&fit=crop&q=80`) 총 31개 |
-
----
-
-## 기획서 변환
-
-`.md` → `.docx` 변환 시 `convert_to_docx.py` 실행:
-```bash
-python convert_to_docx.py
+```powershell
+cd backend
+npm install
+node src/server.js
+# → http://localhost:3000
 ```
-- 라이브러리: `python-docx` (`python -m pip install python-docx`)
-- 폰트: 맑은 고딕
-- 제목 색상: #2E75B6 (파란색)
-- 표: 교대 행 음영 처리
+
+### 3. 모바일 앱 (웹) 실행
+
+```powershell
+cd mobile
+npm install
+npx expo start --web
+# → http://localhost:8081
+```
+
+### 4. AI 서비스 실행 (선택)
+
+```powershell
+cd ai-service
+pip install -r requirements.txt
+uvicorn main:app --port 8001
+# → http://localhost:8001/docs
+```
 
 ---
 
-## 서비스 기획 핵심 내용
+## 환경변수
 
-### 주요 기능
-1. **옷장 등록** — 상·하의 사진 업로드 및 AI 색상 분석
-2. **컬러 매칭** — 보유 아이템 기반 코디 조합 추천
-3. **룩북 저장** — 마음에 드는 코디 저장 및 공유
-4. **스타일 리포트** — 월간 착용 패턴 분석
+### backend/.env
 
-### 기술 스택 (기획 기준)
+```
+NODE_ENV=development
+PORT=3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=closetfit_dev
+DB_USER=postgres
+DB_PASSWORD=postgres
+JWT_SECRET=dev-secret-key-for-testing-only
+JWT_EXPIRES_IN=7d
+AI_SERVICE_URL=http://localhost:8001/api/v1
+```
+
+### mobile/.env
+
+```
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=72533472124-9qdgkd0n97qksk1s1t1qdimrguhhejum.apps.googleusercontent.com
+```
+
+---
+
+## Google OAuth 설정
+
+- **Google Cloud 프로젝트**: `closetfit-496505`
+- **Web Client ID**: `72533472124-9qdgkd0n97qksk1s1t1qdimrguhhejum.apps.googleusercontent.com`
+- **승인된 리디렉션 URI**: `http://localhost:8081`
+- **테스트 사용자**: `hp21647330@gmail.com`
+- **관리 콘솔**: https://console.cloud.google.com/apis/credentials?project=closetfit-496505
+
+---
+
+## 주요 API 엔드포인트
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | /api/v1/auth/social-login | 소셜 로그인 (google/kakao/apple) |
+| PATCH | /api/v1/auth/profile | 프로필 업데이트 |
+| POST | /api/v1/upload/image | 이미지 업로드 (multipart) |
+| GET | /api/v1/closet/items | 옷장 목록 |
+| POST | /api/v1/closet/items | 옷 등록 |
+| GET | /api/v1/closet/items/:id | 아이템 상세 |
+| PATCH | /api/v1/closet/items/:id | 아이템 수정 |
+| DELETE | /api/v1/closet/items/:id | 아이템 삭제 |
+| GET | /api/v1/outfit/recommendations | 코디 추천 (?base_item_id=) |
+
+---
+
+## 테스트 실행
+
+```powershell
+cd backend
+npm test
+# 21개 테스트 전부 통과 (auth 7 + closet 9 + outfit 5)
+```
+
+---
+
+## 기술 스택
+
 | 구분 | 기술 |
 |------|------|
-| 프론트엔드 | React Native (iOS/Android) |
-| 백엔드 | FastAPI (Python) |
-| AI 분석 | OpenAI Vision API / 자체 컬러 분석 모델 |
-| 데이터베이스 | PostgreSQL + Redis |
-| 스토리지 | AWS S3 |
-| 인프라 | AWS ECS + CloudFront |
-
-### 수익 모델
-- 프리미엄 구독 (월 4,900원): 무제한 매칭, 고급 리포트
-- 제휴 쇼핑 연동: 추천 아이템 커머스 연결
-- 브랜드 스타일링 제안 광고
-
-### 로드맵
-| 단계 | 기간 | 내용 |
-|------|------|------|
-| MVP | 0~3개월 | 옷장 등록, 기본 컬러 매칭 |
-| v1.0 | 4~6개월 | 룩북, 소셜 공유, 쇼핑 연동 |
-| v2.0 | 7~12개월 | AI 고도화, 브랜드 파트너십 |
+| 모바일 | React Native, Expo ~51, Zustand, Axios |
+| 인증 | expo-auth-session, expo-web-browser (Google OAuth) |
+| 백엔드 | Node.js, Express, JWT, Multer |
+| DB | PostgreSQL 17, UUID PK, TIMESTAMPTZ |
+| AI | FastAPI, OpenCV, K-means (5 clusters), scikit-learn |
+| 테스트 | Jest, Supertest |
 
 ---
 
-## Git 정보
+## 핵심 비즈니스 로직
 
-- **원격 저장소**: `https://github.com/davegpt25/business.git`
-- **브랜치**: `master`
-- **초기 푸시 완료** (서비스 기획서 .md, .docx, 목업 포함)
+### 색상 호환성 점수 (outfitController.js)
+- 무채색 조합: 85점
+- 보색 (색상차 150~210°): 90점
+- 유사색 (색상차 ≤30°): 80점
+- 톤온톤 (명도차 <20): 70점
+- 그 외: 50점
+
+### 코디 추천 로직
+- base_item의 카테고리에 따라 COMPLEMENTARY_CATEGORIES로 후보 필터
+- 각 카테고리에서 compatibility_score 최고 아이템 1개씩 선택 (최대 3개)
 
 ---
 
-## 알려진 이슈 및 해결책
+## MVP 현황
+
+| 기능 | 상태 |
+|------|------|
+| Google 소셜 로그인 | ✅ 완료 |
+| 옷 등록 / 조회 / 수정 / 삭제 | ✅ 완료 |
+| 이미지 업로드 (로컬 저장) | ✅ 완료 |
+| AI 색상 추출 (K-means) | ✅ 완료 |
+| 색상 기반 코디 추천 | ✅ 완료 |
+| 모바일 UI (웹 브라우저) | ✅ 완료 |
+
+### Phase 2 예정
+- S3 이미지 스토리지 전환
+- 카카오 / 애플 로그인 연동
+- 착용 기록 및 통계
+- 소셜 피드 (코디 공유)
+- 날씨 연동 추천
+
+---
+
+## 알려진 이슈
 
 | 문제 | 해결책 |
 |------|--------|
-| Port 3000 충돌 | `autoPort: true` 설정으로 3001 자동 할당 |
-| Windows Python PATH 미등록 | 절대 경로 사용 (`C:\Users\hwlll\...`) |
-| ConnectionAbortedError (WinError 10053) | `ThreadingMixIn + TCPServer` 사용 |
-| python-docx 미설치 | `python -m pip install python-docx` |
+| psql 명령 인식 안됨 | `C:\Program Files\PostgreSQL\17\bin` PATH 추가 필요 |
+| npm 스크립트 실행 오류 | `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` 실행 |
+| Google 로그인 invalid_client | .env의 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID 확인 |
+| Expo 환경변수 미반영 | 서버 재시작 필요 (환경변수는 번들 시점에 주입됨) |
